@@ -5,6 +5,7 @@ use bevy::ecs::system::{
     Res,
     ResMut
 };
+use bevy::input::{Input, keyboard::KeyCode};
 use bevy::sprite::ColorMaterial;
 use bevy::asset::{Assets, AssetServer};
 use bevy::core::Time;
@@ -21,6 +22,8 @@ struct HeroBundle {
     position: Vec3,
 }
 
+struct Car;
+
 struct Health(usize);
 
 struct Name(String);
@@ -34,7 +37,31 @@ fn main() {
         .add_plugins(bevy::DefaultPlugins)
         .add_startup_system(startup.system())
         .add_system(greet_heroes.system())
+        .add_system(keyboard_control.system())
         .run()
+}
+
+fn keyboard_control(
+    input: Res<Input<KeyCode>>,
+    mut cars: Query<(&Car, &mut Transform)>
+) {
+    let shift = 10f32;
+    let mut position_shift = Vec3::ZERO;
+    if input.pressed(KeyCode::Up) {
+        position_shift.y += shift;
+    }
+    if input.pressed(KeyCode::Down) {
+        position_shift.y -= shift;
+    }
+    if input.pressed(KeyCode::Right) {
+        position_shift.x += shift;
+    }
+    if input.pressed(KeyCode::Left) {
+        position_shift.x -= shift;
+    }
+    for mut transform in cars.iter_mut() {
+        transform.1.translation += position_shift;
+    }
 }
 
 fn startup(
@@ -51,7 +78,7 @@ fn startup(
         .spawn_bundle(SpriteBundle {
             material: materials.add(blue_car_handle.into()),
             ..Default::default()
-        }).insert(Collider::Floor);
+        }).insert(Car);
     commands
         .spawn_bundle(SpriteBundle {
             material: materials.add(green_car_handle.into()),
@@ -60,7 +87,7 @@ fn startup(
                 ..Default::default()
             },
             ..Default::default()
-        }).insert(Collider::Floor);
+        }).insert(Car);
     commands
         .spawn_bundle(SpriteBundle {
             material: materials.add(red_car_handle.into()),
@@ -69,7 +96,7 @@ fn startup(
                 ..Default::default()
             },
             ..Default::default()
-        }).insert(Collider::Floor);
+        }).insert(Car);
 }
 
 fn greet_heroes(time: Res<Time>, query: Query<&Name>) {
