@@ -1,5 +1,5 @@
 use bevy::window::Windows;
-use bevy::sprite::collide_aabb::{Collision, collide};
+use bevy::sprite::collide_aabb::collide;
 use bevy::ecs::system::{
     IntoSystem,
     Query,
@@ -12,7 +12,7 @@ use bevy::sprite::ColorMaterial;
 use bevy::render::color::Color;
 use bevy::asset::{Assets, AssetServer};
 use bevy::core::Time;
-use bevy::math::{Vec2, Vec3};
+use bevy::math::{Vec2, Vec3, Quat};
 use bevy::transform::components::Transform;
 use bevy::render::entity::OrthographicCameraBundle;
 use bevy::sprite::{Sprite, entity::SpriteBundle};
@@ -59,6 +59,7 @@ fn keyboard_control(
         let mut shift = Vec3::ZERO;
         for (_car, mut transform) in cars.iter_mut() {
             transform.translation = shift;
+            transform.rotation = Quat::IDENTITY;
             shift.y += shift_step;
         }
         return;
@@ -84,8 +85,16 @@ fn keyboard_control(
     for (car, mut transform) in cars.iter_mut() {
         if car.crashed {
             transform.translation = Vec3::ZERO;
-        } else {
+            transform.rotation = Quat::IDENTITY;
+        }
+        else {
             transform.translation += position_shift;
+            if let Some(normalized_shift) = position_shift.try_normalize() {
+                let angle = normalized_shift.angle_between(Vec3::ONE) / 360f32;
+                println!("Angle {}", angle);
+                let rotation = Quat::from_axis_angle(Vec3::new(0f32, 0f32, 1f32), angle);
+                transform.rotation *= rotation;
+            }
         }
     }
 }
