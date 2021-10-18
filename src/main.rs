@@ -88,14 +88,12 @@ fn keyboard_control(
         }
         else {
             let (axis, mut current_angle) = transform.rotation.to_axis_angle();
-            if axis.z < 0f32 {
-                current_angle = 6.28 - current_angle;
-            }
+            println!("Angle {:#?}", (axis, current_angle));
+            current_angle = 2f32 * std::f32::consts::PI + current_angle * axis.z;
             transform.translation += Vec3::new(
                 position_shift * current_angle.cos(),
                 position_shift * current_angle.sin(),
                 0f32);
-            println!("Rotation {:?}", (axis, current_angle));
             transform.rotation *= Quat::from_rotation_z(angle / 10f32); 
         }
     }
