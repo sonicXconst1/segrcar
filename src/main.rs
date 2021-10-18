@@ -65,22 +65,21 @@ fn keyboard_control(
         return;
     }
     let primary_window = window.get_primary().unwrap();
-    let height = primary_window.height() / 10f32;
-    let width = primary_window.width() / 10f32;
+    let height = primary_window.height() / 2f32;
     let vertical_speed = height * time.delta_seconds(); 
-    let horizontal_speed = width * time.delta_seconds();
-    let mut position_shift = Vec3::ZERO;
+    let mut position_shift = 0f32;
+    let mut angle = 0f32;
     if input.pressed(KeyCode::Up) {
-        position_shift.y += vertical_speed;
+        position_shift += vertical_speed;
     }
     if input.pressed(KeyCode::Down) {
-        position_shift.y -= vertical_speed;
+        position_shift -= vertical_speed;
     }
     if input.pressed(KeyCode::Right) {
-        position_shift.x += horizontal_speed;
+        angle -= 1f32;
     }
     if input.pressed(KeyCode::Left) {
-        position_shift.x -= horizontal_speed;
+        angle += 1f32;
     }
     for (car, mut transform) in cars.iter_mut() {
         if car.crashed {
@@ -88,13 +87,16 @@ fn keyboard_control(
             transform.rotation = Quat::IDENTITY;
         }
         else {
-            transform.translation += position_shift;
-            if let Some(normalized_shift) = position_shift.try_normalize() {
-                let angle = normalized_shift.angle_between(Vec3::ONE) / 360f32;
-                println!("Angle {}", angle);
-                let rotation = Quat::from_axis_angle(Vec3::new(0f32, 0f32, 1f32), angle);
-                transform.rotation *= rotation;
+            let (axis, mut current_angle) = transform.rotation.to_axis_angle();
+            if axis.z < 0f32 {
+                current_angle = 6.28 - current_angle;
             }
+            transform.translation += Vec3::new(
+                position_shift * current_angle.cos(),
+                position_shift * current_angle.sin(),
+                0f32);
+            println!("Rotation {:?}", (axis, current_angle));
+            transform.rotation *= Quat::from_rotation_z(angle / 10f32); 
         }
     }
 }
