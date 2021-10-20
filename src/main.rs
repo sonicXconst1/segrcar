@@ -1,5 +1,7 @@
+use bevy::render::camera::OrthographicProjection;
 use bevy::window::Windows;
 use bevy::sprite::collide_aabb::collide;
+use bevy::ecs::query::Without;
 use bevy::ecs::system::{
     IntoSystem,
     Query,
@@ -38,11 +40,13 @@ enum Collider {
     Wall
 }
 
+struct Wall;
+
 fn main() {
     bevy::app::App::build()
         .add_plugins(bevy::DefaultPlugins)
         .add_startup_system(startup.system())
-        .add_system(greet_heroes.system())
+        .add_system(collider_movement.system())
         .add_system(keyboard_control.system())
         .add_system(car_collision_system.system())
         .run()
@@ -88,7 +92,7 @@ fn keyboard_control(
         }
         else {
             let (axis, mut current_angle) = transform.rotation.to_axis_angle();
-            println!("Angle {:#?}", (axis, current_angle));
+            //println!("Angle {:#?}", (axis, current_angle));
             current_angle = 2f32 * std::f32::consts::PI + current_angle * axis.z;
             transform.translation += Vec3::new(
                 position_shift * current_angle.cos(),
@@ -112,13 +116,35 @@ fn car_collision_system(
                 car_size,
                 collider_transform.translation,
                 collider_transform.scale.truncate() * Vec2::ONE);
-            if let Some(collision) = collision {
-                println!("Collision {:?}", collision);
+            if let Some(_collision) = collision {
                 collision_happened = true;
                 break;
             } 
         }
         car.crashed = collision_happened;
+    }
+}
+
+fn collider_movement(
+    mut colliders: Query<(&Wall, &mut Transform, Without<OrthographicProjection>)>,
+    camera: Query<&OrthographicProjection>
+) {
+    let projection = camera.single().unwrap();
+    let shift = 1f32;
+    for (_collider, mut transform, _) in colliders.iter_mut() {
+        let mut next_x_position = transform.translation.x + shift;
+        if next_x_position > projection.right {
+            next_x_position = projection.left;
+        }
+        let mut next_y_position = transform.translation.y + shift;
+        if next_y_position > projection.top {
+            next_y_position = projection.bottom;
+        }
+        transform.translation = Vec3::new(
+           next_x_position,
+           next_y_position,
+           0f32
+        );
     }
 }
 
@@ -134,7 +160,6 @@ fn startup(
 
     let window = windows.get_primary().unwrap();
     let width = window.width();
-    let height = window.height();
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands
@@ -164,16 +189,15 @@ fn startup(
     commands.spawn_bundle(SpriteBundle {
         material: materials.add(Color::rgb(0.2, 1.0, 0.2).into()),
         sprite: Sprite {
-            size: Vec2::new(1f32, 1f32),
+            size: Vec2::new(width / 4f32, 10f32),
             ..Default::default()
         },
         transform: Transform {
-            translation: Vec3::new(-width / 2f32, 0f32, 0f32),
-            scale: Vec3::new(10f32, height, 0f32),
+            translation: Vec3::new(0f32, 100f32, 0f32),
             ..Default::default()
         },
         ..Default::default()
-    }).insert(Collider::Wall);
+    }).insert(Collider::Wall).insert(Wall);
     commands.spawn_bundle(SpriteBundle {
         material: materials.add(Color::rgb(0.2, 1.0, 0.2).into()),
         sprite: Sprite {
@@ -181,42 +205,9 @@ fn startup(
             ..Default::default()
         },
         transform: Transform {
-            translation: Vec3::new(width / 2f32, 0f32, 0f32),
-            scale: Vec3::new(10f32, height, 0f32),
+            translation: Vec3::new(0f32, 200f32, 0f32),
             ..Default::default()
         },
         ..Default::default()
-    }).insert(Collider::Wall);
-    commands.spawn_bundle(SpriteBundle {
-        material: materials.add(Color::rgb(0.2, 1.0, 0.2).into()),
-        sprite: Sprite {
-            size: Vec2::new(1f32, 1f32),
-            ..Default::default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0f32, -height / 2f32, 0f32),
-            scale: Vec3::new(width, 10f32, 0f32),
-            ..Default::default()
-        },
-        ..Default::default()
-    }).insert(Collider::Wall);
-    commands.spawn_bundle(SpriteBundle {
-        material: materials.add(Color::rgb(0.2, 1.0, 0.2).into()),
-        sprite: Sprite {
-            size: Vec2::new(1f32, 1f32),
-            ..Default::default()
-        },
-        transform: Transform {
-            translation: Vec3::new(0f32, height / 2f32, 0f32),
-            scale: Vec3::new(width, 10f32, 0f32),
-            ..Default::default()
-        },
-        ..Default::default()
-    }).insert(Collider::Wall);
-}
-
-fn greet_heroes(time: Res<Time>, query: Query<&Name>) {
-    for hero in query.iter() {
-        println!("Hello {}! time_elapsed: {:?}", hero.0, time.delta())
-    }
+    }).insert(Collider::Wall).insert(Wall);
 }
