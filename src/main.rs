@@ -1,4 +1,9 @@
+use bevy::prelude::MeshBundle;
+use bevy::prelude::shape::{self, Plane};
 use bevy::render::camera::OrthographicProjection;
+use bevy::pbr::PbrBundle;
+use bevy::pbr::prelude::StandardMaterial;
+use bevy::render::pipeline::PrimitiveTopology;
 use bevy::window::Windows;
 use bevy::sprite::collide_aabb::collide;
 use bevy::ecs::query::Without;
@@ -12,6 +17,7 @@ use bevy::ecs::system::{
 use bevy::input::{Input, keyboard::KeyCode};
 use bevy::sprite::ColorMaterial;
 use bevy::render::color::Color;
+use bevy::render::mesh::{Indices, Mesh};
 use bevy::asset::{Assets, AssetServer};
 use bevy::core::Time;
 use bevy::math::{Vec2, Vec3, Quat};
@@ -148,39 +154,79 @@ fn collider_movement(
     }
 }
 
+fn generate_positions() -> Vec<Vec3> {
+    vec![
+        Vec3::new(0.0, 0.0, 0.0),
+        Vec3::new(10.0, 0.0, 0.0),
+        Vec3::new(20.0, 0.0, 0.0),
+        Vec3::new(30.0, 0.0, 0.0),
+        Vec3::new(40.0, 0.0, 0.0),
+        Vec3::new(50.0, 0.0, 0.0),
+        Vec3::new(50.0, 10.0, 0.0),
+        Vec3::new(50.0, 20.0, 0.0),
+        Vec3::new(50.0, 30.0, 0.0),
+        Vec3::new(50.0, 40.0, 0.0),
+        Vec3::new(50.0, 50.0, 0.0),
+    ]
+}
+
+fn create_mesh(positions: &[Vec3], shift: f32) -> Mesh {
+    let mut new_positions: Vec<[f32; 3]> = Vec::new();
+    for position in positions.iter() {
+        let result = [position.x, position.y, position.z];
+        new_positions.push(result.clone());
+        let shifted_y = [position.x, position.y - shift, position.z];
+        new_positions.push(shifted_y.clone());
+        let shifted_x = [position.x + shift, position.y - shift, position.z];
+        new_positions.push(shifted_x.clone());
+
+        new_positions.push(result);
+        let shifted_x_y = [position.x + shift, position.y - shift, position.z];
+        new_positions.push(shifted_x_y);
+        let shifted_x_y = [position.x + shift, position.y, position.z];
+        new_positions.push(shifted_x_y);
+    }
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![1.0; new_positions.len()]);
+    mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; new_positions.len()]);
+    mesh.set_indices(Some(Indices::U32((0..new_positions.len()).map(|v| v as u32).collect())));
+    mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, new_positions);
+    mesh
+}
+
 fn startup(
     mut commands: Commands,
     assets_server: Res<AssetServer>,
     windows: Res<Windows>,
-    mut materials: ResMut<Assets<ColorMaterial>>
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut standard_materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let blue_car_handle = assets_server.load("blue_car.png");
     let green_car_handle = assets_server.load("green_car.png");
-    let red_car_handle = assets_server.load("red_car.png");
 
     let window = windows.get_primary().unwrap();
     let width = window.width();
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands
-        .spawn_bundle(SpriteBundle {
-            material: materials.add(blue_car_handle.into()),
+        .spawn_bundle(PbrBundle {
+            mesh:  meshes.add(create_mesh(&generate_positions(), 10f32)),
+            material: standard_materials.add(StandardMaterial {
+                base_color: Color::rgb(1.0, 0.0, 0.0),
+                ..Default::default()
+            }),
+            transform: Transform {
+                scale: Vec3::new(10.0, 10.0, 1.0),
+                translation: Vec3::new(-100.0, 50.0, 0.0),
+                ..Default::default()
+            },
             ..Default::default()
-        }).insert(Car::default());
+        });
     commands
         .spawn_bundle(SpriteBundle {
             material: materials.add(green_car_handle.into()),
             transform: Transform {
-                translation: Vec3::new(0.0, 30.0, 0.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        }).insert(Car::default());
-    commands
-        .spawn_bundle(SpriteBundle {
-            material: materials.add(red_car_handle.into()),
-            transform: Transform {
-                translation: Vec3::new(0.0, 60.0, 0.0),
+                translation: Vec3::new(0.0, 0.0, 0.0),
                 ..Default::default()
             },
             ..Default::default()
