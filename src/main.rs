@@ -1,3 +1,4 @@
+mod road;
 use bevy::prelude::MeshBundle;
 use bevy::prelude::shape::{self, Plane};
 use bevy::render::camera::OrthographicProjection;
@@ -43,7 +44,7 @@ struct Health(usize);
 struct Name(String);
 
 enum Collider {
-    Wall
+    Wall,
 }
 
 struct Wall;
@@ -171,27 +172,7 @@ fn generate_positions() -> Vec<Vec3> {
 }
 
 fn create_mesh(positions: &[Vec3], shift: f32) -> Mesh {
-    let mut new_positions: Vec<[f32; 3]> = Vec::new();
-    for position in positions.iter() {
-        let result = [position.x, position.y, position.z];
-        new_positions.push(result.clone());
-        let shifted_y = [position.x, position.y - shift, position.z];
-        new_positions.push(shifted_y.clone());
-        let shifted_x = [position.x + shift, position.y - shift, position.z];
-        new_positions.push(shifted_x.clone());
-
-        new_positions.push(result);
-        let shifted_x_y = [position.x + shift, position.y - shift, position.z];
-        new_positions.push(shifted_x_y);
-        let shifted_x_y = [position.x + shift, position.y, position.z];
-        new_positions.push(shifted_x_y);
-    }
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-    mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![1.0; new_positions.len()]);
-    mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[0.0, 0.0]; new_positions.len()]);
-    mesh.set_indices(Some(Indices::U32((0..new_positions.len()).map(|v| v as u32).collect())));
-    mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, new_positions);
-    mesh
+    road::generate_road(&road::generate_sections())
 }
 
 fn startup(
@@ -216,7 +197,7 @@ fn startup(
                 ..Default::default()
             }),
             transform: Transform {
-                scale: Vec3::new(10.0, 10.0, 1.0),
+                scale: Vec3::new(1.0, 1.0, 1.0),
                 translation: Vec3::new(-100.0, 50.0, 0.0),
                 ..Default::default()
             },
