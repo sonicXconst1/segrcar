@@ -1,8 +1,9 @@
 use bevy::render::mesh::{Indices, Mesh};
-use bevy::math::{Vec3, vec3};
+use bevy::math::{Vec2, Vec3, vec2, vec3};
 use bevy::render::pipeline::PrimitiveTopology;
 
 pub type Shift = (f32, Vec3);
+pub type Speed = Vec2;
 pub type SectionDescription = Vec<Shift>;
 
 pub struct Trajectory {
@@ -12,23 +13,37 @@ pub struct Trajectory {
     indices: Vec<u32>
 }
 
+pub struct Pivot {
+    position: Vec3,
+    direction: Vec3,
+    width: f32
+}
 
 pub enum Section {
     Straight(SectionDescription),
-    Turn(SectionDescription),
+    Turn(SectionDescription, Vec2),
 }
 
 pub fn generate_sections() -> Vec<Section> {
     use Section::*;
     vec![
         Straight(vec![
-             (10f32, vec3(100.0, 0.0, 0.0)),
+             (25f32, vec3(100.0, 0.0, 0.0)),
         ]),
         Straight(vec![
-             (30f32, vec3(100.0, 100.0, 0.0)),
+             (25f32, vec3(100.0, 100.0, 0.0)),
         ]),
         Straight(vec![
-             (50f32, vec3(0.0, 120.0, 0.0)),
+             (25f32, vec3(100.0, -100.0, 0.0)),
+        ]),
+        Straight(vec![
+             (25f32, vec3(-100.0, -100.0, 0.0)),
+        ]),
+        Straight(vec![
+             (25f32, vec3(-400.0, 0.0, 0.0)),
+        ]),
+        Straight(vec![
+             (25f32, vec3(200.0, 100.0, 0.0)),
         ]),
     ]
 }
@@ -36,53 +51,58 @@ pub fn generate_sections() -> Vec<Section> {
 pub fn generate_road(sections: &[Section]) -> Mesh {
     use Section::*;
     let mut trajectory = Vec::new();
-    let mut current_position = Vec3::ZERO;
-    let mut width = 10f32;
+    let mut current_pivot = Pivot {
+        position: Vec3::ZERO,
+        direction: Vec3::X,
+        width: 25f32
+    };
     for section in sections.iter() {
-        let (new_width, new_position, section_trajectory) = match section {
-            Straight(trajectory) => build_straight(current_position, width, trajectory),
-            Turn(trajectory) => build_turn(current_position, width, trajectory)
+        let (new_pivot, section_trajectory) = match section {
+            Straight(trajectory) => build_straight(current_pivot, trajectory),
+            Turn(trajectory, speed) => build_turn(current_pivot, *speed, trajectory)
         };
         trajectory.push(section_trajectory);
-        current_position = new_position;
-        width = new_width;
+        current_pivot = new_pivot;
     }
     trajectory_to_mesh(trajectory)
 }
 
-pub fn build_straight(start: Vec3, width: f32, description: &SectionDescription) -> (f32, Vec3, Trajectory) {
+pub fn build_straight(pivot: Pivot, description: &SectionDescription) -> (Pivot, Trajectory) {
     let mut positions = Vec::new();
     let mut section_width = Vec::new();
-    let mut current_position = start;
-    positions.push(start);
-    section_width.push(width);
+    let mut current_position = pivot.position;
+    positions.push(pivot.position);
+    section_width.push(pivot.width);
     for (width, point) in description.iter() {
         current_position += *point;
         positions.push(current_position);
         section_width.push(*width);
     }
+    let current_perpendicular = perpendicular(pivot.direction);
     let mut trajectory_positions = Vec::new();
     for index in 0..(positions.len() - 1) {
         let width = *section_width.get(index).unwrap();
         let first = *positions.get(index).unwrap();
         let next = *positions.get(index + 1).unwrap();
-        let direction = next - first;
         // TODO: bug expected if direction is close to 0.
-        let perpendicular = vec3(direction.y, -direction.x, 0f32).normalize();
-        let first_middle = first + perpendicular * width;
-        let first_right = next + perpendicular * width;
-        let first_bottom = first - perpendicular * width;
+        let new_perpendicular = perpendicular(next - first);
+        let first_middle = first + current_perpendicular * width;
+        let first_right = next + current_perpendicular * width;
+        let first_bottom = first - current_perpendicular * width;
         let next_middle = first_right;
         let next_left = first_bottom;
-        let next_bottom = next - perpendicular * width;
+        let next_bottom = next - current_perpendicular * width;
         trajectory_positions.push(first_middle);
         trajectory_positions.push(first_right);
         trajectory_positions.push(first_bottom);
         trajectory_positions.push(next_bottom);
         trajectory_positions.push(next_left);
         trajectory_positions.push(next_middle);
+        println!("Distance: {:#?}", next_middle);
+        //current_direction = new_direction;
+        //current_perpendicular = new_perpendicular;
     }
-    println!("Trajectory Positions: {:#?}", trajectory_positions);
+    //println!("Trajectory Positions: {:#?}", trajectory_positions);
     let trajectory = Trajectory {
         positions: trajectory_positions.iter().map(|position| [position.x, position.y, position.z]).collect(),
         indices: (0..trajectory_positions.len()).map(|index| index as u32).collect(),
@@ -91,10 +111,17 @@ pub fn build_straight(start: Vec3, width: f32, description: &SectionDescription)
     };
     let current_position = *positions.last().unwrap();
     let width = *section_width.last().unwrap();
-    (width, current_position, trajectory)
+    (
+        Pivot {
+            position: current_position,
+            direction: pivot.direction,
+            width
+        },
+        trajectory
+    )
 }
 
-pub fn build_turn(start: Vec3, width: f32, description: &SectionDescription) -> (f32, Vec3, Trajectory) {
+pub fn build_turn(pivot: Pivot, speed: Vec2, description: &SectionDescription) -> (Pivot, Trajectory) {
     unimplemented!()
 }
 
@@ -114,4 +141,8 @@ pub fn trajectory_to_mesh(descriptions: Vec<Trajectory>) -> Mesh {
     mesh.set_indices(Some(Indices::U32(indices)));
     mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh
+}
+
+fn perpendicular(vec: Vec3) -> Vec3 {
+    vec3(vec.y, -vec.x, 0f32).normalize()
 }

@@ -1,10 +1,8 @@
 mod road;
-use bevy::prelude::MeshBundle;
-use bevy::prelude::shape::{self, Plane};
+use bevy::prelude::shape;
 use bevy::render::camera::OrthographicProjection;
 use bevy::pbr::PbrBundle;
 use bevy::pbr::prelude::StandardMaterial;
-use bevy::render::pipeline::PrimitiveTopology;
 use bevy::window::Windows;
 use bevy::sprite::collide_aabb::collide;
 use bevy::ecs::query::Without;
@@ -21,7 +19,7 @@ use bevy::render::color::Color;
 use bevy::render::mesh::{Indices, Mesh};
 use bevy::asset::{Assets, AssetServer};
 use bevy::core::Time;
-use bevy::math::{Vec2, Vec3, Quat};
+use bevy::math::{Vec2, Vec3, Quat, vec2, vec3};
 use bevy::transform::components::Transform;
 use bevy::render::entity::OrthographicCameraBundle;
 use bevy::sprite::{Sprite, entity::SpriteBundle};
@@ -190,19 +188,26 @@ fn startup(
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands
-        .spawn_bundle(PbrBundle {
+        .spawn_bundle(SpriteBundle {
             mesh:  meshes.add(create_mesh(&generate_positions(), 10f32)),
-            material: standard_materials.add(StandardMaterial {
-                base_color: Color::rgb(1.0, 0.0, 0.0),
-                ..Default::default()
-            }),
+            material: materials.add(ColorMaterial::color(Color::rgb(0.3, 0.3, 0.5))),
+            sprite: Sprite::new(vec2(1.0, 1.0)),
             transform: Transform {
-                scale: Vec3::new(1.0, 1.0, 1.0),
-                translation: Vec3::new(-100.0, 50.0, 0.0),
+                translation: vec3(0.0, -100.0, 0.0),
                 ..Default::default()
             },
             ..Default::default()
         });
+    commands.spawn_bundle(SpriteBundle {
+        mesh: meshes.add(shape::Cube { size: 10f32 }.into()),
+        material: materials.add(ColorMaterial::color(Color::rgb(1.0, 1.0, 0.0))),
+        sprite: Sprite::new(vec2(1f32, 1f32)),
+        transform: Transform {
+            translation: Vec3::new(-100.0, 0.0, 0.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    });
     commands
         .spawn_bundle(SpriteBundle {
             material: materials.add(green_car_handle.into()),
