@@ -20,16 +20,15 @@ pub enum Section {
 
 pub fn generate_sections() -> Vec<Section> {
     use Section::*;
-    let width = 10f32;
     vec![
         Straight(vec![
-             (width, vec3(10.0, 0.0, 0.0)),
+             (10f32, vec3(100.0, 0.0, 0.0)),
         ]),
         Straight(vec![
-             (width, vec3(50.0, 50.0, 0.0)),
+             (30f32, vec3(100.0, 100.0, 0.0)),
         ]),
         Straight(vec![
-             (width, vec3(0.0, 120.0, 0.0)),
+             (50f32, vec3(0.0, 120.0, 0.0)),
         ]),
     ]
 }
@@ -55,14 +54,16 @@ pub fn build_straight(start: Vec3, width: f32, description: &SectionDescription)
     let mut positions = Vec::new();
     let mut section_width = Vec::new();
     let mut current_position = start;
+    positions.push(start);
+    section_width.push(width);
     for (width, point) in description.iter() {
         current_position += *point;
         positions.push(current_position);
-        section_width.push(width);
+        section_width.push(*width);
     }
     let mut trajectory_positions = Vec::new();
     for index in 0..(positions.len() - 1) {
-        let width = **section_width.get(index).unwrap();
+        let width = *section_width.get(index).unwrap();
         let first = *positions.get(index).unwrap();
         let next = *positions.get(index + 1).unwrap();
         let direction = next - first;
@@ -72,14 +73,14 @@ pub fn build_straight(start: Vec3, width: f32, description: &SectionDescription)
         let first_right = next + perpendicular * width;
         let first_bottom = first - perpendicular * width;
         let next_middle = first_right;
-        let next_bottom = next - perpendicular * width;
         let next_left = first_bottom;
+        let next_bottom = next - perpendicular * width;
         trajectory_positions.push(first_middle);
         trajectory_positions.push(first_right);
         trajectory_positions.push(first_bottom);
-        trajectory_positions.push(next_middle);
         trajectory_positions.push(next_bottom);
         trajectory_positions.push(next_left);
+        trajectory_positions.push(next_middle);
     }
     println!("Trajectory Positions: {:#?}", trajectory_positions);
     let trajectory = Trajectory {
@@ -90,7 +91,7 @@ pub fn build_straight(start: Vec3, width: f32, description: &SectionDescription)
     };
     let current_position = *positions.last().unwrap();
     let width = *section_width.last().unwrap();
-    (*width, current_position, trajectory)
+    (width, current_position, trajectory)
 }
 
 pub fn build_turn(start: Vec3, width: f32, description: &SectionDescription) -> (f32, Vec3, Trajectory) {
@@ -99,15 +100,14 @@ pub fn build_turn(start: Vec3, width: f32, description: &SectionDescription) -> 
 
 pub fn trajectory_to_mesh(descriptions: Vec<Trajectory>) -> Mesh {
     let mut positions = Vec::new();
-    let mut indices = Vec::new();
     let mut normals = Vec::new();
     let mut uvs = Vec::new();
     for description in descriptions.into_iter() {
         positions.extend(description.positions);
-        indices.extend(description.indices);
         normals.extend(description.normals);
         uvs.extend(description.uvs);
     }
+    let indices = (0..positions.len()).map(|value| value as u32).collect();
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
     mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
