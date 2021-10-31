@@ -81,11 +81,11 @@ pub fn build_straight(pivot: Pivot, description: &SectionDescription) -> (Pivot,
     let current_perpendicular = perpendicular(pivot.direction);
     let mut trajectory_positions = Vec::new();
     for index in 0..(positions.len() - 1) {
-        let width = *section_width.get(index).unwrap();
+        let mut width = *section_width.get(index).unwrap();
         let first = *positions.get(index).unwrap();
         let next = *positions.get(index + 1).unwrap();
-        // TODO: bug expected if direction is close to 0.
         let new_perpendicular = perpendicular(next - first);
+        width /= new_perpendicular.angle_between(current_perpendicular).cos();
         let first_middle = first + current_perpendicular * width;
         let first_right = next + current_perpendicular * width;
         let first_bottom = first - current_perpendicular * width;
@@ -98,11 +98,7 @@ pub fn build_straight(pivot: Pivot, description: &SectionDescription) -> (Pivot,
         trajectory_positions.push(next_bottom);
         trajectory_positions.push(next_left);
         trajectory_positions.push(next_middle);
-        println!("Distance: {:#?}", next_middle);
-        //current_direction = new_direction;
-        //current_perpendicular = new_perpendicular;
     }
-    //println!("Trajectory Positions: {:#?}", trajectory_positions);
     let trajectory = Trajectory {
         positions: trajectory_positions.iter().map(|position| [position.x, position.y, position.z]).collect(),
         indices: (0..trajectory_positions.len()).map(|index| index as u32).collect(),
@@ -144,5 +140,6 @@ pub fn trajectory_to_mesh(descriptions: Vec<Trajectory>) -> Mesh {
 }
 
 fn perpendicular(vec: Vec3) -> Vec3 {
+    // TODO: bug expected if direction is close to 0.
     vec3(vec.y, -vec.x, 0f32).normalize()
 }
