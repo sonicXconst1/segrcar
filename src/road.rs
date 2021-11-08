@@ -27,8 +27,17 @@ pub enum Section {
 pub fn generate_sections() -> Vec<Section> {
     use Section::*;
     vec![
+        Straight(vec![
+             (25f32, vec3(100.0, 0.0, 0.0))
+        ]),
         Turn(vec![
              ((25f32, vec3(100.0, 100.0, 0.0)), vec3(20.0, 30.0, 0.0))
+        ]),
+        Straight(vec![
+             (25f32, vec3(100.0, 0.0, 0.0))
+        ]),
+        Turn(vec![
+             ((25f32, vec3(100.0, -100.0, 0.0)), vec3(20.0, -30.0, 0.0))
         ]),
     ]
 }
@@ -110,25 +119,26 @@ pub fn build_turn(pivot: Pivot, description: &TurnDescription) -> (Pivot, Trajec
     let steps_count = 3;
     for ((width, point), speed) in description.iter() {
         let final_position = current_position + *point;
-        for _step in 0..steps_count{
+        for _step in 0..steps_count {
             current_position += *speed;
             current_position = current_position.min(final_position);
             positions.push(current_position);
             section_width.push(*width);
         }
         if current_position != final_position {
-            positions.push(final_position)
+            positions.push(final_position);
+            section_width.push(*width);
         }
     }
     let mut current_perpendicular = perpendicular(pivot.direction);
     let mut current_direction = pivot.direction;
     let mut trajectory_positions = Vec::new();
     for index in 0..(positions.len() - 1) {
-        let mut width = *section_width.get(index).unwrap();
+        let width = *section_width.get(index).unwrap();
         let first = *positions.get(index).unwrap();
         let next = *positions.get(index + 1).unwrap();
         let new_perpendicular = perpendicular(next - first);
-        width /= new_perpendicular.angle_between(current_perpendicular).cos();
+        //width /= new_perpendicular.angle_between(current_perpendicular).cos();
         let first_middle = first + current_perpendicular * width;
         let first_right = next + new_perpendicular * width;
         let first_bottom = first - current_perpendicular * width;
@@ -144,7 +154,6 @@ pub fn build_turn(pivot: Pivot, description: &TurnDescription) -> (Pivot, Trajec
         current_perpendicular = new_perpendicular;
         current_direction = next - first;
     }
-    println!("Trajectory: {:#?}", trajectory_positions);
     let trajectory = Trajectory {
         positions: trajectory_positions.iter().map(|position| [position.x, position.y, position.z]).collect(),
         normals: (0..trajectory_positions.len()).map(|_| [1.0, 1.0, 1.0]).collect(),

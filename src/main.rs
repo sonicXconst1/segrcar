@@ -1,8 +1,8 @@
 mod road;
+mod line;
+use line::LineBundle;
 use bevy::prelude::shape;
 use bevy::render::camera::OrthographicProjection;
-use bevy::pbr::PbrBundle;
-use bevy::pbr::prelude::StandardMaterial;
 use bevy::window::Windows;
 use bevy::sprite::collide_aabb::collide;
 use bevy::ecs::query::Without;
@@ -16,7 +16,7 @@ use bevy::ecs::system::{
 use bevy::input::{Input, keyboard::KeyCode};
 use bevy::sprite::ColorMaterial;
 use bevy::render::color::Color;
-use bevy::render::mesh::{Indices, Mesh};
+use bevy::render::mesh::Mesh;
 use bevy::asset::{Assets, AssetServer};
 use bevy::core::Time;
 use bevy::math::{Vec2, Vec3, Quat, vec2, vec3};
@@ -50,6 +50,7 @@ struct Wall;
 fn main() {
     bevy::app::App::build()
         .add_plugins(bevy::DefaultPlugins)
+        .add_plugin(line::LinePlugin)
         .add_startup_system(startup.system())
         .add_system(collider_movement.system())
         .add_system(keyboard_control.system())
@@ -153,32 +154,11 @@ fn collider_movement(
     }
 }
 
-fn generate_positions() -> Vec<Vec3> {
-    vec![
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(10.0, 0.0, 0.0),
-        Vec3::new(20.0, 0.0, 0.0),
-        Vec3::new(30.0, 0.0, 0.0),
-        Vec3::new(40.0, 0.0, 0.0),
-        Vec3::new(50.0, 0.0, 0.0),
-        Vec3::new(50.0, 10.0, 0.0),
-        Vec3::new(50.0, 20.0, 0.0),
-        Vec3::new(50.0, 30.0, 0.0),
-        Vec3::new(50.0, 40.0, 0.0),
-        Vec3::new(50.0, 50.0, 0.0),
-    ]
-}
-
-fn create_mesh(positions: &[Vec3], shift: f32) -> Mesh {
-    road::generate_road(&road::generate_sections())
-}
-
 fn startup(
     mut commands: Commands,
     assets_server: Res<AssetServer>,
     windows: Res<Windows>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut standard_materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let green_car_handle = assets_server.load("green_car.png");
@@ -187,9 +167,12 @@ fn startup(
     let width = window.width();
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(LineBundle::new(Vec3::ZERO, vec3(100f32, 100f32, 0f32)));
+    commands.spawn_bundle(LineBundle::new(Vec3::ZERO, vec3(100f32, -100f32, 0f32)));
+    commands.spawn_bundle(LineBundle::new(Vec3::ZERO, vec3(-100f32, 100f32, 0f32)));
     commands
         .spawn_bundle(SpriteBundle {
-            mesh:  meshes.add(create_mesh(&generate_positions(), 10f32)),
+            mesh:  meshes.add(road::generate_road(&road::generate_sections())),
             material: materials.add(ColorMaterial::color(Color::rgb(0.3, 0.3, 0.5))),
             sprite: Sprite::new(vec2(1.0, 1.0)),
             transform: Transform {
@@ -197,7 +180,7 @@ fn startup(
                 ..Default::default()
             },
             ..Default::default()
-        });
+        }).insert(bevy::render::wireframe::Wireframe);
     commands.spawn_bundle(SpriteBundle {
         mesh: meshes.add(shape::Cube { size: 10f32 }.into()),
         material: materials.add(ColorMaterial::color(Color::rgb(1.0, 1.0, 0.0))),
