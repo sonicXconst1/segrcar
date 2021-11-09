@@ -48,16 +48,22 @@ impl Plugin for LinePlugin {
 #[uuid = "f093e7c5-634c-45f8-a2af-7fcd0245f259"]
 pub struct LineShader {
     #[render_resources(buffer)]
-    pub points: Vec<Vec3>,
+    pub points: Vec<Vec4>,
     pub color: Vec4,
 }
 
-pub const MAX_LINES: usize = 128;
+pub const MAX_LINES: usize = 228;
 pub const MAX_POINTS: usize = MAX_LINES * 2;
 
 fn create_mesh() -> Mesh {
     let mut mesh = Mesh::new(PrimitiveTopology::LineList);
-    let positions = vec![[0.0, 0.0, 0.0]; MAX_POINTS];
+    let mut positions = vec![[0.0, 0f32, 0f32]; MAX_POINTS];
+
+    positions[0] = [0f32, 0f32, 0f32];
+    positions[1] = [100f32, 100f32, 0f32];
+    positions[2] = [100f32, 100f32, 0f32];
+    positions[3] = [200f32, 0f32, 0f32];
+
     mesh.set_attribute(
         Mesh::ATTRIBUTE_POSITION,
         VertexAttributeValues::Float3(positions.into()));
@@ -93,7 +99,7 @@ fn setup(
 
     let mesh = create_mesh();
     let shader = materials.add(LineShader {
-        points: vec![Vec3::ZERO; MAX_POINTS],
+        points: vec![Vec4::ZERO; MAX_POINTS],
         color: Color::RED.into()
     });
 
@@ -112,10 +118,19 @@ fn draw_lines(
 ) {
     for shader in shaders.iter() {
         if let Some(shader) = assets.get_mut(shader) {
+
+            shader.points[0] = Vec3::new(000f32, -100f32, 0f32).extend(1f32);
+            shader.points[1] = Vec3::new(000f32, 100f32, 0f32).extend(1f32);
+
+            shader.points[2] = Vec3::new(100f32, -200f32, 0f32).extend(1f32);
+            shader.points[3] = Vec3::new(100f32, 200f32, 0f32).extend(1f32);
+
+            shader.points[4] = Vec3::new(-100f32, -200f32, 0f32).extend(1f32);
+            shader.points[5] = Vec3::new(-100f32, 200f32, 0f32).extend(1f32);
+
             for (index, line) in lines.iter().enumerate() {
-                //println!("{} {:?} {:?}", index, line.start, line.stop);
-                shader.points[index * 2] = line.start;
-                shader.points[index * 2 + 1] = line.stop;
+                //shader.points[index * 2] = line.start;
+                //shader.points[index * 2 + 1] = line.stop;
             }
         }
     }
