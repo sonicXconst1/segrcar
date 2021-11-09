@@ -118,19 +118,9 @@ fn draw_lines(
 ) {
     for shader in shaders.iter() {
         if let Some(shader) = assets.get_mut(shader) {
-
-            shader.points[0] = Vec3::new(000f32, -100f32, 0f32).extend(1f32);
-            shader.points[1] = Vec3::new(000f32, 100f32, 0f32).extend(1f32);
-
-            shader.points[2] = Vec3::new(100f32, -200f32, 0f32).extend(1f32);
-            shader.points[3] = Vec3::new(100f32, 200f32, 0f32).extend(1f32);
-
-            shader.points[4] = Vec3::new(-100f32, -200f32, 0f32).extend(1f32);
-            shader.points[5] = Vec3::new(-100f32, 200f32, 0f32).extend(1f32);
-
             for (index, line) in lines.iter().enumerate() {
-                //shader.points[index * 2] = line.start;
-                //shader.points[index * 2 + 1] = line.stop;
+                shader.points[index * 2] = line.start.extend(1f32);
+                shader.points[index * 2 + 1] = line.stop.extend(1f32);
             }
         }
     }

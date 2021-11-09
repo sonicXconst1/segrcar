@@ -168,6 +168,9 @@ fn startup(
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
     commands.spawn_bundle(LineBundle::new(Vec3::ZERO, vec3(100f32, 100f32, 0f32)));
+    commands.spawn_bundle(LineBundle::new(vec3(100f32, 100f32, 0f32), vec3(200f32, 000f32, 0f32)));
+    commands.spawn_bundle(LineBundle::new(vec3(200f32, 000f32, 0f32), vec3(100f32, -100f32, 0f32)));
+    commands.spawn_bundle(LineBundle::new(vec3(100f32, -100f32, 0f32), vec3(000f32, 000f32, 0f32)));
     commands
         .spawn_bundle(SpriteBundle {
             mesh:  meshes.add(road::generate_road(&road::generate_sections())),
