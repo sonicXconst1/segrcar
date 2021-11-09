@@ -1,18 +1,10 @@
 use bevy::{app::{AppBuilder, Plugin, CoreStage}, asset::{Assets, Handle}, ecs::{
         system::{ResMut, Query, Commands},
         bundle::Bundle,
-    }, math::{Vec3, Vec4}, prelude::{AddAsset, IntoSystem, ParallelSystemDescriptorCoercion}, reflect::TypeUuid, render::{
-        entity::MeshBundle,
-        mesh::{Mesh, VertexAttributeValues},
-        color::Color,
-        pipeline::{PrimitiveTopology, PipelineDescriptor, RenderPipelines, RenderPipeline},
-        render_graph::{
+    }, math::{Vec3, Vec4}, prelude::{AddAsset, IntoSystem, ParallelSystemDescriptorCoercion}, reflect::TypeUuid, render::{color::Color, entity::MeshBundle, mesh::{Indices, Mesh, VertexAttributeValues}, pipeline::{PrimitiveTopology, PipelineDescriptor, RenderPipelines, RenderPipeline}, render_graph::{
             base::node::MAIN_PASS,
             AssetRenderResourcesNode, 
-            RenderGraph},
-        shader::{Shader, ShaderStage, ShaderStages, ShaderDefs, asset_shader_defs_system},
-        renderer::RenderResources,
-    }};
+            RenderGraph}, renderer::RenderResources, shader::{Shader, ShaderStage, ShaderStages, ShaderDefs, asset_shader_defs_system}}};
 
 pub struct Line {
     pub start: Vec3,
@@ -30,6 +22,24 @@ impl LineBundle {
             line: Line { start, stop }
         }
     }
+}
+
+pub fn create_line(parts: Vec<[Vec3; 2]>) -> Mesh {
+    let mut mesh = Mesh::new(PrimitiveTopology::LineList);
+    let positions: Vec<[f32; 3]> = parts.into_iter()
+        .flatten()
+        .map(|line| [line.x, line.y, 0f32])
+        .collect();
+    let indices = (0..positions.len()).map(|value| value as u32).collect();
+    let normals = (0..positions.len()).map(|_| [1.0, 1.0, 1.0]).collect::<Vec<[f32; 3]>>();
+    let uvs = (0..positions.len()).map(|_| [0.0, 0.0]).collect::<Vec<[f32; 2]>>();
+    mesh.set_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        VertexAttributeValues::Float3(positions.into()));
+    mesh.set_indices(Some(Indices::U32(indices)));
+    mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+    mesh
 }
 
 pub struct LinePlugin;

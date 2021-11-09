@@ -1,7 +1,7 @@
 mod road;
 mod line;
-use line::LineBundle;
-use bevy::prelude::shape;
+use line::{LineBundle, create_line};
+use bevy::prelude::{MeshBundle, shape};
 use bevy::render::camera::OrthographicProjection;
 use bevy::window::Windows;
 use bevy::sprite::collide_aabb::collide;
@@ -167,6 +167,16 @@ fn startup(
     let width = window.width();
 
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(SpriteBundle {
+        material: materials.add(ColorMaterial::color(Color::rgb(1.0, 0.1, 0.5))),
+        sprite: Sprite::new(vec2(1.0, 1.0)),
+        mesh: meshes.add(create_line(vec![
+            [vec3(-100f32, 000f32, 0f32), vec3(-200f32, 100f32, 0f32)],
+            [vec3(-200f32, 100f32, 0f32), vec3(-200f32, -100f32, 0f32)],
+            [vec3(-200f32, -100f32, 0f32), vec3(-100f32, 000f32, 0f32)],
+        ])),
+        ..Default::default()
+    });
     commands.spawn_bundle(LineBundle::new(Vec3::ZERO, vec3(100f32, 100f32, 0f32)));
     commands.spawn_bundle(LineBundle::new(vec3(100f32, 100f32, 0f32), vec3(200f32, 000f32, 0f32)));
     commands.spawn_bundle(LineBundle::new(vec3(200f32, 000f32, 0f32), vec3(100f32, -100f32, 0f32)));
