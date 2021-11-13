@@ -204,7 +204,7 @@ fn startup(
     });
     commands
         .spawn_bundle(SpriteBundle {
-            material: game_resource.car,
+            //material: game_resource.car,
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
                 ..Default::default()

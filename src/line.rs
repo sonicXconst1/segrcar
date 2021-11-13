@@ -66,8 +66,11 @@ impl Plugin for LinePlugin {
         app
             .add_asset::<LineShader>()
             .add_startup_system(setup.system())
-            .add_system_to_stage(CoreStage::Last, draw_lines.system().label("draw_lines"))
-            .add_system_to_stage(CoreStage::Last, asset_shader_defs_system::<LineShader>.system().before("draw_lines"));
+            .add_system_to_stage(CoreStage::Last, draw_lines_with_mesh.system().label("draw_lines"))
+            .add_system_to_stage(
+                CoreStage::Last,
+                asset_shader_defs_system::<LineShader>.system().before("draw_lines")
+            );
     }
 }
 
@@ -84,13 +87,7 @@ pub const MAX_POINTS: usize = MAX_LINES * 2;
 
 fn create_mesh() -> Mesh {
     let mut mesh = Mesh::new(PrimitiveTopology::LineList);
-    let mut positions = vec![[0.0, 0f32, 0f32]; MAX_POINTS];
-
-    positions[0] = [0f32, 0f32, 0f32];
-    positions[1] = [100f32, 100f32, 0f32];
-    positions[2] = [100f32, 100f32, 0f32];
-    positions[3] = [200f32, 0f32, 0f32];
-
+    let positions = Vec::with_capacity(100);
     mesh.set_attribute(
         Mesh::ATTRIBUTE_POSITION,
         VertexAttributeValues::Float3(positions.into()));
@@ -135,9 +132,50 @@ fn setup(
             render_pipelines: pipes,
             ..Default::default()
         })
+        .insert(Test)
         .insert(shader);
 }
 
+struct Test;
+
+fn draw_lines_with_mesh(
+    mut meshes: Query<(&Handle<Mesh>, &Test)>,
+    mut mesh_resources: ResMut<Assets<Mesh>>,
+    lines: Query<&Line>
+) {
+    fn draw_lines_on_mesh(
+        positions: &mut Vec<[f32; 3]>,
+        line_index: usize,
+        line: &Line) {
+        let line_index = line_index * 2;
+        let next_line_index = line_index + 1;
+        if next_line_index >= positions.len() {
+            positions.push(line.start.into());
+            positions.push(line.stop.into());
+        } else {
+            positions[line_index] = line.start.into();
+            positions[next_line_index] = line.stop.into();
+        }
+    }
+
+    for (mesh_handle, _shader) in meshes.iter_mut() {
+        let mesh = mesh_resources.get_mut(mesh_handle)
+            .expect("Invalid mesh handle");
+        let positions = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
+            .expect("Mesh without positions");
+        match positions {
+            VertexAttributeValues::Float3(positions) => {
+                for (index, line) in lines.iter().enumerate() {
+                    draw_lines_on_mesh(positions, index, line)
+                }
+                //println!("Positions: {:?}", positions);
+            },
+            other => panic!("Invalid type of positions {:#?}", other)
+        }
+    }
+}
+
+#[allow(dead_code)]
 fn draw_lines(
     mut assets: ResMut<Assets<LineShader>>,
     shaders: Query<&Handle<LineShader>>,
