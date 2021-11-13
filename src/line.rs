@@ -1,10 +1,27 @@
-use bevy::{app::{AppBuilder, Plugin, CoreStage}, asset::{Assets, Handle}, ecs::{
+use bevy::{
+    app::{AppBuilder, Plugin, CoreStage},
+    asset::{Assets, Handle},
+    ecs::{
         system::{ResMut, Query, Commands},
         bundle::Bundle,
-    }, math::{Vec3, Vec4}, prelude::{AddAsset, IntoSystem, ParallelSystemDescriptorCoercion}, reflect::TypeUuid, render::{color::Color, entity::MeshBundle, mesh::{Indices, Mesh, VertexAttributeValues}, pipeline::{PrimitiveTopology, PipelineDescriptor, RenderPipelines, RenderPipeline}, render_graph::{
+    },
+    math::{Vec3, Vec4},
+    prelude::{AddAsset, IntoSystem, ParallelSystemDescriptorCoercion},
+    reflect::TypeUuid,
+    render::{
+        color::Color,
+        entity::MeshBundle,
+        mesh::{Indices, Mesh, VertexAttributeValues},
+        pipeline::{PrimitiveTopology, PipelineDescriptor, RenderPipelines, RenderPipeline},
+        render_graph::{
             base::node::MAIN_PASS,
             AssetRenderResourcesNode, 
-            RenderGraph}, renderer::RenderResources, shader::{Shader, ShaderStage, ShaderStages, ShaderDefs, asset_shader_defs_system}}};
+            RenderGraph
+        },
+        renderer::RenderResources,
+        shader::{Shader, ShaderStage, ShaderStages, ShaderDefs, asset_shader_defs_system}
+    }
+};
 
 pub struct Line {
     pub start: Vec3,

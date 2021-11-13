@@ -1,7 +1,8 @@
+mod resources;
 mod road;
 mod line;
 use line::{LineBundle, create_line};
-use bevy::prelude::{MeshBundle, shape};
+use bevy::prelude::shape;
 use bevy::render::camera::OrthographicProjection;
 use bevy::window::Windows;
 use bevy::sprite::collide_aabb::collide;
@@ -49,6 +50,7 @@ struct Wall;
 
 fn main() {
     bevy::app::App::build()
+        .init_resource::<resources::GameResources>()
         .add_plugins(bevy::DefaultPlugins)
         .add_plugin(line::LinePlugin)
         .add_startup_system(startup.system())
@@ -156,13 +158,11 @@ fn collider_movement(
 
 fn startup(
     mut commands: Commands,
-    assets_server: Res<AssetServer>,
     windows: Res<Windows>,
+    game_resource: Res<resources::GameResources>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let green_car_handle = assets_server.load("green_car.png");
-
     let window = windows.get_primary().unwrap();
     let width = window.width();
 
@@ -204,7 +204,7 @@ fn startup(
     });
     commands
         .spawn_bundle(SpriteBundle {
-            material: materials.add(green_car_handle.into()),
+            material: game_resource.car,
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
                 ..Default::default()
