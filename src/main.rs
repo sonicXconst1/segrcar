@@ -18,7 +18,7 @@ use bevy::input::{Input, keyboard::KeyCode};
 use bevy::sprite::ColorMaterial;
 use bevy::render::color::Color;
 use bevy::render::mesh::Mesh;
-use bevy::asset::{Assets, AssetServer};
+use bevy::asset::Assets;
 use bevy::core::Time;
 use bevy::math::{Vec2, Vec3, Quat, vec2, vec3};
 use bevy::transform::components::Transform;

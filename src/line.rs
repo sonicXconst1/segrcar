@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use bevy::{
     app::{AppBuilder, Plugin, CoreStage},
     asset::{Assets, Handle},
@@ -23,9 +25,10 @@ use bevy::{
     }
 };
 
+pub struct Point(Vec3, Vec3);
+
 pub struct Line {
-    pub start: Vec3,
-    pub stop: Vec3,
+    pub points: Vec<Point>,
     pub color: Color
 }
 
@@ -36,20 +39,24 @@ pub struct LineBundle {
 
 impl LineBundle {
     pub fn new(start: Vec3, stop: Vec3) -> Self {
-        LineBundle {
-            line: Line { start, stop, color: Color::WHITE }
-        }
+        let points = vec![Point(start, stop)];
+        Self::from_points(points, Color::WHITE)
     }
 
     pub fn with_color(start: Vec3, stop: Vec3, color: Color) -> Self {
+        let points = vec![Point(start, stop)];
+        Self::from_points(points, color)
+    }
+
+    pub fn from_points(points: Vec<Point>, color: Color) -> Self {
         LineBundle {
-            line: Line { start, stop, color }
+            line: Line { points, color }
         }
     }
 }
 
 pub fn create_line(parts: Vec<[Vec3; 2]>) -> Mesh {
-    let mut mesh = Mesh::new(PrimitiveTopology::LineList);
+    let mut mesh = Mesh::new(PrimitiveTopology::LineStrip);
     let positions: Vec<[f32; 3]> = parts.into_iter()
         .flatten()
         .map(|line| [line.x, line.y, 0f32])
@@ -141,23 +148,43 @@ fn draw_lines_with_mesh(
     mut shader_resource: ResMut<Assets<LineShader>>,
     lines: Query<&Line>
 ) {
+    fn draw_point(
+        positions: &mut Vec<[f32; 3]>,
+        colors: &mut Vec<Vec4>,
+        start: Vec3,
+        stop: Vec3,
+        color: Color,
+        start_index: usize,
+        stop_index: usize
+    ) {
+        if stop_index >= positions.len() {
+            positions.push(start.into());
+            positions.push(stop.into());
+            colors.push(color.into());
+            colors.push(color.into());
+        } else {
+            positions[start_index] = start.into();
+            positions[stop_index] = stop.into();
+            colors[start_index] = color.into();
+            colors[stop_index] = color.into();
+        }
+    }
     fn draw_lines_on_mesh(
         positions: &mut Vec<[f32; 3]>,
         colors: &mut Vec<Vec4>,
-        line_index: usize,
+        point_counter: usize,
         line: &Line) {
-        let line_index = line_index * 2;
-        let next_line_index = line_index + 1;
-        if next_line_index >= positions.len() {
-            positions.push(line.start.into());
-            positions.push(line.stop.into());
-            colors.push(line.color.into());
-            colors.push(line.color.into());
-        } else {
-            positions[line_index] = line.start.into();
-            positions[next_line_index] = line.stop.into();
-            colors[line_index] = line.color.into();
-            colors[next_line_index] = line.color.into();
+        for (index, Point(start, stop)) in line.points.iter().enumerate() {
+            let point_index = point_counter + index * 2;
+            let next_point_index = point_index + 1;
+            draw_point(
+                positions,
+                colors,
+                *start, 
+                *stop,
+                line.color,
+                point_index,
+                next_point_index)
         }
     }
 
@@ -168,14 +195,16 @@ fn draw_lines_with_mesh(
             .expect("Invalid mesh handle");
         let positions = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
             .expect("Mesh without positions");
+        let mut point_counter = 0;
         match positions {
             VertexAttributeValues::Float3(positions) => {
-                for (index, line) in lines.iter().enumerate() {
+                for line in lines.iter() {
                     draw_lines_on_mesh(
                         positions,
                         &mut shader.colors,
-                        index,
-                        line)
+                        point_counter,
+                        line);
+                    point_counter += line.points.len() * 2;
                 }
                 //println!("Positions: {:?}", positions);
             },
