@@ -25,7 +25,8 @@ use bevy::{
 
 pub struct Line {
     pub start: Vec3,
-    pub stop: Vec3
+    pub stop: Vec3,
+    pub color: Color
 }
 
 #[derive(Bundle)]
@@ -36,7 +37,13 @@ pub struct LineBundle {
 impl LineBundle {
     pub fn new(start: Vec3, stop: Vec3) -> Self {
         LineBundle {
-            line: Line { start, stop }
+            line: Line { start, stop, color: Color::WHITE }
+        }
+    }
+
+    pub fn with_color(start: Vec3, stop: Vec3, color: Color) -> Self {
+        LineBundle {
+            line: Line { start, stop, color }
         }
     }
 }
@@ -76,14 +83,10 @@ impl Plugin for LinePlugin {
 
 #[derive(RenderResources, Default, ShaderDefs, TypeUuid)]
 #[uuid = "f093e7c5-634c-45f8-a2af-7fcd0245f259"]
-pub struct LineShader {
+pub struct LineShader{
     #[render_resources(buffer)]
-    pub points: Vec<Vec4>,
-    pub color: Vec4,
+    colors: Vec<Vec4>
 }
-
-pub const MAX_LINES: usize = 228;
-pub const MAX_POINTS: usize = MAX_LINES * 2;
 
 fn create_mesh() -> Mesh {
     let mut mesh = Mesh::new(PrimitiveTopology::LineList);
@@ -122,29 +125,25 @@ fn setup(
         vec![RenderPipeline::new(pipeline_handler)]);
 
     let mesh = create_mesh();
-    let shader = materials.add(LineShader {
-        points: vec![Vec4::ZERO; MAX_POINTS],
-        color: Color::RED.into()
-    });
+    let shader = materials.add(LineShader { colors: Vec::new()});
 
     commands.spawn_bundle(MeshBundle {
             mesh: meshes.add(mesh),
             render_pipelines: pipes,
             ..Default::default()
         })
-        .insert(Test)
         .insert(shader);
 }
 
-struct Test;
-
 fn draw_lines_with_mesh(
-    mut meshes: Query<(&Handle<Mesh>, &Test)>,
+    mut meshes: Query<(&Handle<Mesh>, &Handle<LineShader>)>,
     mut mesh_resources: ResMut<Assets<Mesh>>,
+    mut shader_resource: ResMut<Assets<LineShader>>,
     lines: Query<&Line>
 ) {
     fn draw_lines_on_mesh(
         positions: &mut Vec<[f32; 3]>,
+        colors: &mut Vec<Vec4>,
         line_index: usize,
         line: &Line) {
         let line_index = line_index * 2;
@@ -152,13 +151,19 @@ fn draw_lines_with_mesh(
         if next_line_index >= positions.len() {
             positions.push(line.start.into());
             positions.push(line.stop.into());
+            colors.push(line.color.into());
+            colors.push(line.color.into());
         } else {
             positions[line_index] = line.start.into();
             positions[next_line_index] = line.stop.into();
+            colors[line_index] = line.color.into();
+            colors[next_line_index] = line.color.into();
         }
     }
 
-    for (mesh_handle, _shader) in meshes.iter_mut() {
+    for (mesh_handle, shader_handle) in meshes.iter_mut() {
+        let shader = shader_resource.get_mut(shader_handle)
+            .expect("Invalid shader handle");
         let mesh = mesh_resources.get_mut(mesh_handle)
             .expect("Invalid mesh handle");
         let positions = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION)
@@ -166,27 +171,15 @@ fn draw_lines_with_mesh(
         match positions {
             VertexAttributeValues::Float3(positions) => {
                 for (index, line) in lines.iter().enumerate() {
-                    draw_lines_on_mesh(positions, index, line)
+                    draw_lines_on_mesh(
+                        positions,
+                        &mut shader.colors,
+                        index,
+                        line)
                 }
                 //println!("Positions: {:?}", positions);
             },
             other => panic!("Invalid type of positions {:#?}", other)
-        }
-    }
-}
-
-#[allow(dead_code)]
-fn draw_lines(
-    mut assets: ResMut<Assets<LineShader>>,
-    shaders: Query<&Handle<LineShader>>,
-    lines: Query<&Line>
-) {
-    for shader in shaders.iter() {
-        if let Some(shader) = assets.get_mut(shader) {
-            for (index, line) in lines.iter().enumerate() {
-                shader.points[index * 2] = line.start.extend(1f32);
-                shader.points[index * 2 + 1] = line.stop.extend(1f32);
-            }
         }
     }
 }

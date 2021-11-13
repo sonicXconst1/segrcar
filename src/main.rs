@@ -177,9 +177,15 @@ fn startup(
         ])),
         ..Default::default()
     });
-    commands.spawn_bundle(LineBundle::new(Vec3::ZERO, vec3(100f32, 100f32, 0f32)));
+    commands.spawn_bundle(LineBundle::with_color(
+        Vec3::ZERO,
+        vec3(100f32, 100f32, 0f32),
+        Color::RED));
     commands.spawn_bundle(LineBundle::new(vec3(100f32, 100f32, 0f32), vec3(200f32, 000f32, 0f32)));
-    commands.spawn_bundle(LineBundle::new(vec3(200f32, 000f32, 0f32), vec3(100f32, -100f32, 0f32)));
+    commands.spawn_bundle(LineBundle::with_color(
+        vec3(200f32, 000f32, 0f32),
+        vec3(100f32, -100f32, 0f32),
+        Color::RED));
     commands.spawn_bundle(LineBundle::new(vec3(100f32, -100f32, 0f32), vec3(000f32, 000f32, 0f32)));
     commands
         .spawn_bundle(SpriteBundle {
