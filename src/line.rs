@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use bevy::{
     app::{AppBuilder, Plugin, CoreStage},
     asset::{Assets, Handle},
@@ -25,8 +23,10 @@ use bevy::{
     }
 };
 
-pub struct Point(Vec3, Vec3);
+#[derive(Debug)]
+pub struct Point(pub Vec3, pub Vec3);
 
+#[derive(Debug)]
 pub struct Line {
     pub points: Vec<Point>,
     pub color: Color
@@ -38,16 +38,6 @@ pub struct LineBundle {
 }
 
 impl LineBundle {
-    pub fn new(start: Vec3, stop: Vec3) -> Self {
-        let points = vec![Point(start, stop)];
-        Self::from_points(points, Color::WHITE)
-    }
-
-    pub fn with_color(start: Vec3, stop: Vec3, color: Color) -> Self {
-        let points = vec![Point(start, stop)];
-        Self::from_points(points, color)
-    }
-
     pub fn from_points(points: Vec<Point>, color: Color) -> Self {
         LineBundle {
             line: Line { points, color }
@@ -151,24 +141,19 @@ fn draw_lines_with_mesh(
     fn draw_point(
         positions: &mut Vec<[f32; 3]>,
         colors: &mut Vec<Vec4>,
-        start: Vec3,
-        stop: Vec3,
+        point: Vec3,
         color: Color,
-        start_index: usize,
-        stop_index: usize
+        index: usize,
     ) {
-        if stop_index >= positions.len() {
-            positions.push(start.into());
-            positions.push(stop.into());
-            colors.push(color.into());
+        if index >= positions.len() {
+            positions.push(point.into());
             colors.push(color.into());
         } else {
-            positions[start_index] = start.into();
-            positions[stop_index] = stop.into();
-            colors[start_index] = color.into();
-            colors[stop_index] = color.into();
+            positions[index] = point.into();
+            colors[index] = color.into();
         }
     }
+
     fn draw_lines_on_mesh(
         positions: &mut Vec<[f32; 3]>,
         colors: &mut Vec<Vec4>,
@@ -177,14 +162,8 @@ fn draw_lines_with_mesh(
         for (index, Point(start, stop)) in line.points.iter().enumerate() {
             let point_index = point_counter + index * 2;
             let next_point_index = point_index + 1;
-            draw_point(
-                positions,
-                colors,
-                *start, 
-                *stop,
-                line.color,
-                point_index,
-                next_point_index)
+            draw_point(positions, colors, *start, line.color, point_index);
+            draw_point(positions, colors, *stop, line.color, next_point_index)
         }
     }
 
@@ -199,6 +178,7 @@ fn draw_lines_with_mesh(
         match positions {
             VertexAttributeValues::Float3(positions) => {
                 for line in lines.iter() {
+                    //println!("Line {:#?}", line);
                     draw_lines_on_mesh(
                         positions,
                         &mut shader.colors,
