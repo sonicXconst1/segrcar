@@ -28,16 +28,16 @@ pub fn generate_sections() -> Vec<Section> {
     use Section::*;
     vec![
         Straight(vec![
-             (25f32, vec3(100.0, 0.0, 0.0))
+             (50f32, vec3(100.0, 0.0, 0.0))
         ]),
         Turn(vec![
-             ((25f32, vec3(100.0, 100.0, 0.0)), vec3(20.0, 30.0, 0.0))
+             ((50f32, vec3(100.0, 100.0, 0.0)), vec3(20.0, 30.0, 0.0))
         ]),
         Straight(vec![
-             (25f32, vec3(100.0, 0.0, 0.0))
+             (50f32, vec3(100.0, 0.0, 0.0))
         ]),
         Turn(vec![
-             ((25f32, vec3(100.0, -100.0, 0.0)), vec3(20.0, -30.0, 0.0))
+             ((50f32, vec3(100.0, -100.0, 0.0)), vec3(20.0, -30.0, 0.0))
         ]),
     ]
 }
@@ -48,7 +48,7 @@ pub fn generate_road(sections: &[Section]) -> Mesh {
     let mut current_pivot = Pivot {
         position: Vec3::ZERO,
         direction: Vec3::X,
-        width: 25f32
+        width: 50f32
     };
     for section in sections.iter() {
         let (new_pivot, section_trajectory) = match section {
