@@ -43,6 +43,29 @@ impl LineBundle {
             line: Line { points, color }
         }
     }
+
+    pub fn from_mesh(mesh: &Mesh) -> Self {
+        let positions = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+            .expect("Mesh without positions");
+        let positions = match positions {
+            VertexAttributeValues::Float3(positions) => positions,
+            other => panic!("Invalid type of positions {:#?}", other)
+        };
+        let indices = match mesh.indices().expect("Indices are available") {
+            Indices::U16(_) => panic!("u16 is unsupported type"),
+            Indices::U32(indices) => indices
+        };
+        let mut points: Vec<Point> = Vec::with_capacity(positions.len() * 3);
+        for index in indices.chunks(3) {
+            let position_0 = *positions.get(index[0] as usize).expect("Invalid index");
+            let position_1 = *positions.get(index[1] as usize).expect("Invalid index");
+            let position_2 = *positions.get(index[2] as usize).expect("Invalid index");
+            points.push(Point(position_0.into(), position_1.into()));
+            points.push(Point(position_1.into(), position_2.into()));
+            points.push(Point(position_2.into(), position_0.into()));
+        }
+        Self::from_points(points, Color::GREEN)
+    }
 }
 
 pub fn create_line(parts: Vec<[Vec3; 2]>) -> Mesh {

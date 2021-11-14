@@ -207,13 +207,15 @@ fn startup(
         ],
         Color::ORANGE));
     
+    let road_mesh = road::generate_road(&road::generate_sections());
+    commands.spawn_bundle(LineBundle::from_mesh(&road_mesh));
     commands
         .spawn_bundle(SpriteBundle {
-            mesh:  meshes.add(road::generate_road(&road::generate_sections())),
+            mesh:  meshes.add(road_mesh),
             material: materials.add(ColorMaterial::color(Color::rgb(0.3, 0.3, 0.5))),
             sprite: Sprite::new(vec2(1.0, 1.0)),
             transform: Transform {
-                translation: vec3(0.0, -100.0, 0.0),
+                translation: vec3(0.0, 100.0, 0.0),
                 ..Default::default()
             },
             ..Default::default()
