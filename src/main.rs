@@ -1,7 +1,7 @@
 mod resources;
 mod road;
 mod line;
-use line::{LineBundle, create_line, Point};
+use line::{LineBundle, create_line};
 use bevy::prelude::shape;
 use bevy::render::camera::OrthographicProjection;
 use bevy::window::Windows;
@@ -178,21 +178,6 @@ fn startup(
         ..Default::default()
     });
 
-    commands.spawn_bundle(LineBundle::from_points(
-        vec![
-            Point(vec3(-100f32, 000f32, 0f32), vec3(000f32, 100f32, 0f32)),
-            Point(vec3(000f32, 100f32, 0f32), vec3(-100f32, 100f32, 0f32)),
-            Point(vec3(-100f32, 100f32, 0f32), vec3(-100f32, 000f32, 0f32)),
-        ],
-        Color::GREEN));
-    commands.spawn_bundle(LineBundle::from_points(
-        vec![
-            Point(vec3(-100f32, 000f32, 0f32), vec3(000f32, -100f32, 0f32)),
-            Point(vec3(000f32, -100f32, 0f32), vec3(-100f32, -100f32, 0f32)),
-            Point(vec3(-100f32, -100f32, 0f32), vec3(-100f32, 000f32, 0f32)),
-        ],
-        Color::GREEN));
-    
     let road_mesh = road::generate_road(&road::generate_sections());
     commands.spawn_bundle(LineBundle::from_mesh(&road_mesh));
     commands
@@ -201,7 +186,7 @@ fn startup(
             material: materials.add(ColorMaterial::color(Color::rgb(0.3, 0.3, 0.5))),
             sprite: Sprite::new(vec2(1.0, 1.0)),
             transform: Transform {
-                translation: vec3(00.0, 100.0, 0.0),
+                translation: vec3(-600.0, 000.0, 0.0),
                 ..Default::default()
             },
             ..Default::default()
