@@ -44,6 +44,18 @@ impl LineBundle {
         }
     }
 
+    pub fn from_line(line: Vec<Vec3>, color: Color) -> Self {
+        let mut points = Vec::with_capacity(line.len());
+        let mut current = *line.first().expect("Empty Line");
+        for point in line.into_iter() {
+            points.push(Point(current, point));
+            current = point;
+        }
+        LineBundle {
+            line: Line { points, color }
+        }
+    }
+
     pub fn from_mesh(mesh: &Mesh) -> Self {
         let positions = mesh.attribute(Mesh::ATTRIBUTE_POSITION)
             .expect("Mesh without positions");
@@ -66,6 +78,32 @@ impl LineBundle {
         }
         Self::from_points(points, Color::GREEN)
     }
+}
+
+pub fn line_to_points(line: &[Vec3]) -> Vec<Point> {
+    let mut points = Vec::with_capacity(line.len());
+    let mut current = *line.first().expect("Empty Line");
+    for point in line.iter() {
+        points.push(Point(current, *point));
+        current = *point;
+    }
+    points
+}
+
+pub fn line_to_normals(line: &[Point]) -> Vec<Point> {
+    fn normal(vec: Vec3) -> Vec3 {
+        // TODO: bug expected if direction is close to 0.
+        vec.cross(Vec3::Z).normalize()
+    }
+    line.iter()
+        .map(|Point(start, stop)| {
+            [
+                Point(*stop, normal(*stop - *start) * 40f32 + *stop),
+                Point(*start, normal(*stop - *start) * 40f32 + *start),
+            ]
+        })
+        .flatten()
+        .collect()
 }
 
 pub fn create_line(parts: Vec<[Vec3; 2]>) -> Mesh {

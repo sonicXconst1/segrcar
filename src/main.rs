@@ -178,7 +178,12 @@ fn startup(
         ..Default::default()
     });
 
-    let road_mesh = road::generate_road(&road::generate_sections());
+    let sections = road::generate_sections();
+    let sections_line = road::sections_into_line(&sections);
+    let sections_normals = line::line_to_normals(&line::line_to_points(&sections_line));
+    let road_mesh = road::generate_road(&sections);
+    commands.spawn_bundle(LineBundle::from_line(sections_line, Color::BLUE));
+    commands.spawn_bundle(LineBundle::from_points(sections_normals, Color::RED));
     commands.spawn_bundle(LineBundle::from_mesh(&road_mesh));
     commands
         .spawn_bundle(SpriteBundle {

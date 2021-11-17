@@ -85,6 +85,19 @@ pub fn generate_road(sections: &[SectionDescription]) -> Mesh {
     trajectory_to_mesh(trajectory)
 }
 
+pub fn sections_into_line(sections: &[SectionDescription]) -> Vec<Vec3> {
+    let mut result = Vec::with_capacity(100);
+    let mut position = Vec3::ZERO;
+    result.push(position);
+    for section in sections.iter() {
+        for (_width, shift) in section.iter() {
+            position += *shift;
+            result.push(position);
+        }
+    }
+    result
+}
+
 pub fn build_section(pivot: Pivot, description: &SectionDescription) -> (Pivot, Trajectory) {
     let mut positions = Vec::new();
     let mut section_width = Vec::new();
@@ -167,7 +180,7 @@ pub fn trajectory_to_mesh(descriptions: Vec<Trajectory>) -> Mesh {
     mesh
 }
 
-fn normal(vec: Vec3) -> Vec3 {
+pub fn normal(vec: Vec3) -> Vec3 {
     // TODO: bug expected if direction is close to 0.
     vec.cross(Vec3::Z).normalize()
 }
