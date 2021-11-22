@@ -1,6 +1,7 @@
 mod resources;
 mod road;
 mod line;
+mod cursor;
 use bevy::input::mouse::{MouseButtonInput, MouseMotion, MouseWheel};
 use line::{LineBundle, create_line};
 use bevy::prelude::{EventReader, info, shape};
