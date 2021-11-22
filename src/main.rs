@@ -1,10 +1,11 @@
 mod resources;
 mod road;
 mod line;
+use bevy::input::mouse::{MouseButtonInput, MouseMotion, MouseWheel};
 use line::{LineBundle, create_line};
-use bevy::prelude::shape;
+use bevy::prelude::{EventReader, info, shape};
 use bevy::render::camera::OrthographicProjection;
-use bevy::window::Windows;
+use bevy::window::{CursorMoved, Windows};
 use bevy::sprite::collide_aabb::collide;
 use bevy::ecs::query::Without;
 use bevy::ecs::system::{
@@ -50,14 +51,33 @@ struct Wall;
 
 fn main() {
     bevy::app::App::build()
-        .init_resource::<resources::GameResources>()
         .add_plugins(bevy::DefaultPlugins)
         .add_plugin(line::LinePlugin)
+        .init_resource::<resources::GameResources>()
         .add_startup_system(startup.system())
         .add_system(collider_movement.system())
         .add_system(keyboard_control.system())
+        .add_system(mouse_control.system())
         .add_system(car_collision_system.system())
         .run()
+}
+
+fn mouse_control(
+    mut mouse_button_input_events: EventReader<MouseButtonInput>,
+    mut mouse_motion_events: EventReader<MouseMotion>,
+    mut mouse_wheel_events: EventReader<MouseWheel>
+) {
+    for event in mouse_motion_events.iter() {
+        info!("{:?}", event)
+    }
+
+    for event in mouse_button_input_events.iter() {
+        info!("{:?}", event)
+    }
+
+    for event in mouse_wheel_events.iter() {
+        info!("{:?}", event)
+    }
 }
 
 fn keyboard_control(
@@ -77,7 +97,7 @@ fn keyboard_control(
         return;
     }
     let primary_window = window.get_primary().unwrap();
-    let height = primary_window.height() / 2f32;
+    let height = primary_window.height() / 5f32;
     let vertical_speed = height * time.delta_seconds(); 
     let mut position_shift = 0f32;
     let mut angle = 0f32;
@@ -103,10 +123,10 @@ fn keyboard_control(
             //println!("Angle {:#?}", (axis, current_angle));
             current_angle = 2f32 * std::f32::consts::PI + current_angle * axis.z;
             transform.translation += Vec3::new(
-                position_shift * current_angle.cos(),
+                position_shift * (current_angle.cos()),
                 position_shift * current_angle.sin(),
                 0f32);
-            transform.rotation *= Quat::from_rotation_z(angle / 10f32); 
+            transform.rotation *= Quat::from_rotation_z(angle / 20f32); 
         }
     }
 }
@@ -138,7 +158,7 @@ fn collider_movement(
     camera: Query<&OrthographicProjection>
 ) {
     let projection = camera.single().unwrap();
-    let shift = 1f32;
+    let shift = 2.5f32;
     for (_collider, mut transform, _) in colliders.iter_mut() {
         let mut next_x_position = transform.translation.x + shift;
         if next_x_position > projection.right {
@@ -159,7 +179,7 @@ fn collider_movement(
 fn startup(
     mut commands: Commands,
     windows: Res<Windows>,
-    //game_resource: Res<resources::GameResources>,
+    game_resource: Res<resources::GameResources>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
@@ -208,9 +228,10 @@ fn startup(
     });
     commands
         .spawn_bundle(SpriteBundle {
-            //material: game_resource.car,
+            material: game_resource.car.clone(),
             transform: Transform {
                 translation: Vec3::new(0.0, 0.0, 0.0),
+                scale: Vec3::splat(game_resource.car_scale),
                 ..Default::default()
             },
             ..Default::default()
