@@ -1,6 +1,6 @@
 mod resources;
 mod road;
-mod line;
+pub mod line;
 mod cursor;
 use bevy::input::mouse::{MouseButtonInput, MouseMotion, MouseWheel};
 use line::{LineBundle, create_line};
@@ -54,31 +54,13 @@ fn main() {
     bevy::app::App::build()
         .add_plugins(bevy::DefaultPlugins)
         .add_plugin(line::LinePlugin)
+        .add_plugin(cursor::CursorPlugin)
         .init_resource::<resources::GameResources>()
         .add_startup_system(startup.system())
         .add_system(collider_movement.system())
         .add_system(keyboard_control.system())
-        .add_system(mouse_control.system())
         .add_system(car_collision_system.system())
         .run()
-}
-
-fn mouse_control(
-    mut mouse_button_input_events: EventReader<MouseButtonInput>,
-    mut mouse_motion_events: EventReader<MouseMotion>,
-    mut mouse_wheel_events: EventReader<MouseWheel>
-) {
-    for event in mouse_motion_events.iter() {
-        info!("{:?}", event)
-    }
-
-    for event in mouse_button_input_events.iter() {
-        info!("{:?}", event)
-    }
-
-    for event in mouse_wheel_events.iter() {
-        info!("{:?}", event)
-    }
 }
 
 fn keyboard_control(
